@@ -13,11 +13,6 @@ ActAsGroup.configure do
     class_policy.new(user, resource).send("#{action}?")
   end
 
-  # Find the owner of a group
-  get_owner do |owner_id|
-    User.find(owner_id)
-  end
-
   # Updates the resource in the database. By default it makes use of `update` on the document, if
   # you want to personalize which method should be used, it could be make by means of the following:
   # update_resource do |document, attributes|
