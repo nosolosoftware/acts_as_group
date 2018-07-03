@@ -1,0 +1,27 @@
+development:
+  clients:
+    default:
+      uri: mongodb://localhost:27017/dummy_act_as_group_development
+  options:
+    preload_models: true
+
+test:
+  clients:
+    default:
+      uri: mongodb://localhost:27017/dummy_act_as_group_test
+      options:
+        read:
+          mode: :primary
+        max_pool_size: 4
+  options:
+    preload_models: true
+
+production:
+  clients:
+    default:
+      uri: "<%= ENV['RAILS_MONGODB_URI'] %>"
+      options:
+        use_activesupport_time_zone: true
+        use_utc: true
+  options:
+    preload_models: true
