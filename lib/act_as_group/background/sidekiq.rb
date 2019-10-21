@@ -10,7 +10,7 @@ module ActAsGroup
           include ::Sidekiq::Worker
 
           def perform(yml)
-            (target, method_name, args) = YAML.safe_load(yml)
+            (target, method_name, args) = YAML.load(yml)
             target.__send__(method_name, *args)
           end
         end
@@ -21,7 +21,7 @@ module ActAsGroup
 
         alias_method :delay, :sidekiq_delay
 
-        def update_later(*args)
+        def update_later(args)
           send(:delay, {}).send(:update_sync_now, args)
         end
 
