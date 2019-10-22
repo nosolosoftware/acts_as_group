@@ -67,9 +67,11 @@ module ActAsGroup
         end
       end
 
-      return ActAsGroup.configuration.process_success.call(self, :update) if ids_not_updated.empty?
+      if ids_not_updated.empty?
+        return ActAsGroup.configuration.process_success.call(self, :update, attributes)
+      end
 
-      ActAsGroup.configuration.process_errors.call(self, ids_not_updated, :update)
+      ActAsGroup.configuration.process_errors.call(self, ids_not_updated, :update, attributes)
     end
 
     # Devuelve un criteria con los documentos agrupados
