@@ -141,7 +141,7 @@ RSpec.describe ActAsGroup::Group do
         it 'authorized resources are removed', :run_delayed_jobs do
           expect_any_instance_of(ActAsGroup::Group).to receive(:documents).and_return(documents)
           documents.each do |d|
-            expect(d).to receive(:custom_destroy)
+            expect(d).to receive(:custom_destroy).and_call_original
           end
           group.destroy
 
