@@ -64,7 +64,7 @@ RSpec.describe ActAsGroup::Group do
     end
   end
 
-  describe '#destroy' do
+  describe '#destroy', mock_find_user: true do
     let(:documents) do
       posts = []
       4.times do
@@ -77,9 +77,9 @@ RSpec.describe ActAsGroup::Group do
     let(:authorized_documents) { documents.select(&:authorized) }
     let(:document_type) { documents.first.class.to_s }
     let(:document_ids) { documents.map(&:id).map(&:to_s) }
-    let(:owner) { 'owner' }
+    let(:owner_id) { 'owner_id' }
 
-    let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner: owner) }
+    let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: owner_id) }
 
     context 'when default method is used' do
       before do
@@ -99,7 +99,7 @@ RSpec.describe ActAsGroup::Group do
       end
 
       it 'not authorized resources are sent to process_errors', :run_delayed_jobs do
-        expect(@process_errors).to receive(:call).with(not_authorized_documents.map(&:id), :destroy)
+        expect(@process_errors).to receive(:call).with(group, not_authorized_documents.map(&:id), :destroy)
         group.destroy
       end
 

@@ -21,8 +21,8 @@ module ActAsGroup
 
         alias_method :delay, :sidekiq_delay
 
-        def update_later(args)
-          send(:delay, {}).send(:update_sync_now, args)
+        def update_later(*args)
+          send(:delay, {}).send(:update_sync_now, *args)
         end
 
         def destroy_later

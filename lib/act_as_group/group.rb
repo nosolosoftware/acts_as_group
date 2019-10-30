@@ -76,7 +76,12 @@ module ActAsGroup
 
     # Devuelve un criteria con los documentos agrupados
     def documents
-      type.to_s.classify.constantize.where(id: ids)
+      klass = type.to_s.classify.constantize
+      if defined?(Mongoid) && klass.ancestors.include?(Mongoid::Document)
+        klass.where(:_id.in => ids)
+      else
+        klass.where(id: ids)
+      end
     end
 
     # Update this very resource
