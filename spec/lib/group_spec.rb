@@ -64,7 +64,7 @@ RSpec.describe ActAsGroup::Group do
     end
   end
 
-  describe '#destroy' do
+  describe '#destroy', mock_find_user: true do
     let(:documents) do
       posts = []
       4.times do
@@ -77,16 +77,14 @@ RSpec.describe ActAsGroup::Group do
     let(:authorized_documents) { documents.select(&:authorized) }
     let(:document_type) { documents.first.class.to_s }
     let(:document_ids) { documents.map(&:id).map(&:to_s) }
-    let(:owner) { 'owner' }
+    let(:owner_id) { 'owner_id' }
 
-    let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner: owner) }
+    let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: owner_id) }
 
     context 'when default method is used' do
       before do
-        p = @process_errors = proc { |_, _| }
         ActAsGroup.configure do
           authorize? { |document, _method| document.authorized }
-          process_errors p
         end
       end
 
@@ -98,8 +96,9 @@ RSpec.describe ActAsGroup::Group do
         end
       end
 
-      it 'not authorized resources are sent to process_errors', :run_delayed_jobs do
-        expect(@process_errors).to receive(:call).with(not_authorized_documents.map(&:id), :destroy)
+      it 'not authorized resources are sent to failed callback', :run_delayed_jobs do
+        expect(Post).to receive(:invoke_after_failed_group_delete)
+          .with(group, not_authorized_documents.map(&:id))
         group.destroy
       end
 
@@ -124,16 +123,14 @@ RSpec.describe ActAsGroup::Group do
 
     context 'when a different method is used' do
       before do
-        p = @process_errors = proc { |_, _| }
         ActAsGroup.configure do
           authorize? { true }
           destroy_resource :custom_destroy
-          process_errors p
         end
       end
 
-      it 'not authorized resources are sent to process_errors', :run_delayed_jobs do
-        expect(@process_errors).not_to receive(:call)
+      it 'not authorized resources are sent to failed callback', :run_delayed_jobs do
+        expect(Post).not_to receive(:invoke_after_failed_group_delete)
         group.destroy
       end
 
@@ -141,7 +138,7 @@ RSpec.describe ActAsGroup::Group do
         it 'authorized resources are removed', :run_delayed_jobs do
           expect_any_instance_of(ActAsGroup::Group).to receive(:documents).and_return(documents)
           documents.each do |d|
-            expect(d).to receive(:custom_destroy)
+            expect(d).to receive(:custom_destroy).and_call_original
           end
           group.destroy
 

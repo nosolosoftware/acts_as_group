@@ -15,4 +15,6 @@ require 'act_as_group/errors'
 
 require 'act_as_group/group'
 
+require 'act_as_group/callbacks'
+
 require 'act_as_group/version'

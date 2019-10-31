@@ -109,13 +109,11 @@ module ActAsGroup
 
     option :background, default: :delayed_job
 
+    option :model_name, default: :user
+
     option :destroy_resource, default: :destroy
 
     option :update_resource, default: :update
-
-    option :process_errors,
-           default: (lambda do |_resource, _action|
-           end)
 
     option :authorize?,
            default: (lambda do |_resource, _action|

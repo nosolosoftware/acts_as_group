@@ -110,4 +110,13 @@ RSpec.configure do |config|
     Delayed::Worker.delay_jobs = true
     ActiveJob::Base.queue_adapter = :test
   end
+
+  config.before(:all) do
+    Object.const_get(:ActAsGroup).send(:remove_const, :Group)
+    load 'lib/act_as_group/group.rb'
+  end
+
+  config.before(:each, mock_find_user: true) do
+    allow(User).to receive(:find).with('owner_id').and_return(User.first_or_create)
+  end
 end

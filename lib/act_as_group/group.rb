@@ -28,21 +28,38 @@ module ActAsGroup
 
     protected
 
+    # Devuelve la clase de los documentos del grupo
+    def klass
+      type.to_s.classify.constantize
+    end
+
+    # Invoca el callback si la clase los implementa
+    def invoke_callback(callback, *args)
+      klass.send(callback, self, *args) if klass.ancestors.include? ActAsGroup::Callbacks
+    end
+
     def destroy_sync
       ids_not_removed = []
 
       # Destruimos el grupo, lo que quiere decir que borramos todos los elementos que
       # pertenencen a él
       documents.each do |document|
-        if ActAsGroup.configuration.authorize?.call(document, :destroy)
+        if ActAsGroup.configuration.authorize?.call(
+          document,
+          :destroy,
+          ActAsGroup.configuration.model_name.to_s.camelize.constantize.find(@owner_id)
+        )
           destroy!(document)
         else
           ids_not_removed << document.id
         end
       end
 
-      return if ids_not_removed.empty?
-      ActAsGroup.configuration.process_errors.call(ids_not_removed, :destroy)
+      if ids_not_removed.empty?
+        invoke_callback(:invoke_after_successful_group_delete)
+      else
+        invoke_callback(:invoke_after_failed_group_delete, ids_not_removed)
+      end
     end
 
     def update_sync(attributes)
@@ -51,20 +68,31 @@ module ActAsGroup
       # Modificamos el grupo, lo que quiere decir que modificamos todos los elementos que
       # pertenencen a él
       documents.each do |document|
-        if ActAsGroup.configuration.authorize?.call(document, :update)
+        if ActAsGroup.configuration.authorize?.call(
+          document,
+          :update,
+          ActAsGroup.configuration.model_name.to_s.camelize.constantize.find(@owner_id)
+        )
           update!(document, attributes)
         else
           ids_not_updated << document.id
         end
       end
 
-      return if ids_not_updated.empty?
-      ActAsGroup.configuration.process_errors.call(ids_not_updated, :update)
+      if ids_not_updated.empty?
+        invoke_callback(:invoke_after_successful_group_update, attributes)
+      else
+        invoke_callback(:invoke_after_failed_group_update, ids_not_updated, attributes)
+      end
     end
 
     # Devuelve un criteria con los documentos agrupados
     def documents
-      type.to_s.classify.constantize.where(:_id.in => ids)
+      if defined?(Mongoid) && klass.ancestors.include?(Mongoid::Document)
+        klass.where(:_id.in => ids)
+      else
+        klass.where(id: ids)
+      end
     end
 
     # Update this very resource
