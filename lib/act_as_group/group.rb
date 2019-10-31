@@ -9,7 +9,7 @@ module ActAsGroup
       @owner_id = attributes[:owner_id].to_s
     end
 
-    # Devuelve un hash con los atributos de esta clase
+    # Return a hash with the attributes for this class
     def attributes
       {id: id, ids: ids, type: type, owner_id: owner_id}
     end
@@ -28,12 +28,12 @@ module ActAsGroup
 
     protected
 
-    # Devuelve la clase de los documentos del grupo
+    # Return the class for the group
     def klass
       type.to_s.classify.constantize
     end
 
-    # Invoca el callback si la clase los implementa
+    # Call callbacks if they are implemented
     def invoke_callback(callback, *args)
       klass.send(callback, self, *args) if klass.ancestors.include? ActAsGroup::Callbacks
     end
@@ -41,8 +41,7 @@ module ActAsGroup
     def destroy_sync
       ids_not_removed = []
 
-      # Destruimos el grupo, lo que quiere decir que borramos todos los elementos que
-      # pertenencen a él
+      # Removes the group, aka, remove each element contained in it
       documents.each do |document|
         if ActAsGroup.configuration.authorize?.call(
           document,
@@ -65,8 +64,7 @@ module ActAsGroup
     def update_sync(attributes)
       ids_not_updated = []
 
-      # Modificamos el grupo, lo que quiere decir que modificamos todos los elementos que
-      # pertenencen a él
+      # Updates the group, aka, update each element contained in it
       documents.each do |document|
         if ActAsGroup.configuration.authorize?.call(
           document,
@@ -86,7 +84,7 @@ module ActAsGroup
       end
     end
 
-    # Devuelve un criteria con los documentos agrupados
+    # Returns the documents affected by this group
     def documents
       if defined?(Mongoid) && klass.ancestors.include?(Mongoid::Document)
         klass.where(:_id.in => ids)
@@ -95,12 +93,12 @@ module ActAsGroup
       end
     end
 
-    # Update this very resource
+    # Updates this very resource
     def update!(document, attributes)
       document.send(ActAsGroup.configuration.update_resource.to_sym, attributes)
     end
 
-    # Remove this very resource
+    # Removes this very resource
     def destroy!(document)
       document.send(ActAsGroup.configuration.destroy_resource.to_sym)
     end
