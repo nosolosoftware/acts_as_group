@@ -87,9 +87,9 @@ module ActAsGroup
     # Returns the documents affected by this group
     def documents
       if defined?(Mongoid) && klass.ancestors.include?(Mongoid::Document)
-        klass.where(:_id.in => ids)
+        klass.where(:_id.in => ids).no_timeout
       else
-        klass.where(id: ids)
+        klass.in_batches.where(id: ids)
       end
     end
 
