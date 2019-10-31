@@ -1,5 +1,6 @@
 class Post
   include Mongoid::Document
+  include ActAsGroup::Callbacks
 
   field :title
   field :authorized, type: Boolean

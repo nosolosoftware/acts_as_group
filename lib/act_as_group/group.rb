@@ -28,6 +28,16 @@ module ActAsGroup
 
     protected
 
+    # Devuelve la clase de los documentos del grupo
+    def klass
+      type.to_s.classify.constantize
+    end
+
+    # Invoca el callback si la clase los implementa
+    def invoke_callback(callback, *args)
+      klass.send(callback, self, *args) if klass.ancestors.include? ActAsGroup::Callbacks
+    end
+
     def destroy_sync
       ids_not_removed = []
 
@@ -45,9 +55,11 @@ module ActAsGroup
         end
       end
 
-      return ActAsGroup.configuration.process_success.call(self, :destroy) if ids_not_removed.empty?
-
-      ActAsGroup.configuration.process_errors.call(self, ids_not_removed, :destroy)
+      if ids_not_removed.empty?
+        invoke_callback(:invoke_after_successful_group_delete)
+      else
+        invoke_callback(:invoke_after_failed_group_delete, ids_not_removed)
+      end
     end
 
     def update_sync(attributes)
@@ -68,15 +80,14 @@ module ActAsGroup
       end
 
       if ids_not_updated.empty?
-        return ActAsGroup.configuration.process_success.call(self, :update, attributes)
+        invoke_callback(:invoke_after_successful_group_update, attributes)
+      else
+        invoke_callback(:invoke_after_failed_group_update, ids_not_updated, attributes)
       end
-
-      ActAsGroup.configuration.process_errors.call(self, ids_not_updated, :update, attributes)
     end
 
     # Devuelve un criteria con los documentos agrupados
     def documents
-      klass = type.to_s.classify.constantize
       if defined?(Mongoid) && klass.ancestors.include?(Mongoid::Document)
         klass.where(:_id.in => ids)
       else

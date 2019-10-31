@@ -115,14 +115,6 @@ module ActAsGroup
 
     option :update_resource, default: :update
 
-    option :process_errors,
-           default: (lambda do |_resource, _action|
-           end)
-
-    option :process_success,
-           default: (lambda do |_resource, _action|
-           end)
-
     option :authorize?,
            default: (lambda do |_resource, _action|
              true

@@ -60,6 +60,66 @@ All the configuration for this gem is contained into `config/initializers/act_as
 * __destroy_resource__: which method should be called to destroy each one of the resources. Default: `destroy`
 * __update_resource__: which method should be called to update each one of the resources. Default: `update`. It should be noted that it receives one argument with a hash.
 * __authorize?__: its goal is two-fold. First, it authorizes the creation/update/destruction of the model `Group`. Second, it also authorizes the operation of update/destruction on each one of the resource. It is a `proc` executed in the context of your controller~s resource, thus it is possibles to access your defined varibles (such as `current_user`). This `proc` receives two arguments: the resource and the action perfomed on it.
-* __process_errors__:
+* __model_name__: Model used as resources owner. Default `User`
 
 ## Routes
+
+Use `act_as_group` in `routes.rb`
+
+```ruby
+resources :posts do
+  act_as_group
+end
+```
+
+to create the endpoints for group manipulation:
+
+```
+POST   /posts/groups
+PUT    /posts/groups/:group_id
+DELETE /posts/groups/:group_id
+```
+
+Additionally `only` and `except` options can be used:
+```ruby
+act_as_group only: %i[create update]
+act_as_group except: %i[destroy]
+```
+
+## Callbacks
+
+To use group callbacks in one resource, the model has to include `ActAsGroup::Callbacks`
+
+Then four callbacks are available to use:
+* after_successful_group_update
+* after_successful_group_delete
+* after_failed_group_update
+* after_failed_group_delete
+
+Each callback expect one or more list of symbols representing class methods,
+and can also be called several times.
+
+```ruby
+class Post < ApplicationRecord
+  include ActAsGroup::Callbacks
+
+  after_successful_group_update :notify, :notify_admin
+  after_failed_group_update :save_log
+  after_successful_group_delete :send_mail
+  after_failed_group_delete :reset_status
+  after_failed_group_delete :another_method
+
+  def self.notify(group, attributes)
+  end
+
+  def self.save_log(group, error_ids, attributes)
+  end
+
+  def self.send_mail(group)
+  end
+
+  def self.reset_status(group, error_ids)
+  end
+end
+```
+
