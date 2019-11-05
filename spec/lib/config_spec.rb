@@ -135,4 +135,28 @@ RSpec.describe ActAsGroup::Config do
       end
     end
   end
+
+  describe '.model_name' do
+    context 'when is not specified' do
+      before do
+        ActAsGroup.configure {}
+      end
+
+      it 'uses user as default' do
+        expect(ActAsGroup.configuration.model_name).to eq(:user)
+      end
+    end
+
+    context 'when is specified' do
+      before do
+        ActAsGroup.configure do
+          model_name :admin
+        end
+      end
+
+      it 'uses specified value' do
+        expect(ActAsGroup.configuration.model_name).to eq(:admin)
+      end
+    end
+  end
 end

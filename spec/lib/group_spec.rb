@@ -64,7 +64,7 @@ RSpec.describe ActAsGroup::Group do
     end
   end
 
-  describe '#destroy', mock_find_user: true do
+  describe 'actions', mock_find_user: true do
     let(:documents) do
       posts = []
       4.times do
@@ -81,83 +81,217 @@ RSpec.describe ActAsGroup::Group do
 
     let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: owner_id) }
 
-    context 'when default method is used' do
-      before do
-        ActAsGroup.configure do
-          authorize? { |document, _method| document.authorized }
-        end
-      end
-
-      it 'is called in each one of the ids', :run_delayed_jobs do
-        group.destroy
-
-        authorized_documents.each do |document|
-          expect(Post.where(_id: document.id).exists?).to be_falsey
-        end
-      end
-
-      it 'not authorized resources are sent to failed callback', :run_delayed_jobs do
-        expect(Post).to receive(:invoke_after_failed_group_delete)
-          .with(group, not_authorized_documents.map(&:id))
-        group.destroy
-      end
-
-      context 'when resources are checked' do
-        it 'authorized resources are removed', :run_delayed_jobs do
-          group.destroy
-
-          authorized_documents.each do |document|
-            expect(Post.where(_id: document.id).exists?).to be_falsey
+    describe '#destroy' do
+      context 'when default method is used' do
+        before do
+          ActAsGroup.configure do
+            authorize? { |document, _method| document.authorized }
           end
         end
 
-        it 'not authorized resources are_not removed', :run_delayed_jobs do
-          group.destroy
+        context 'when resources are checked', :run_delayed_jobs do
+          it 'not authorized resources are sent to failed callback' do
+            expect(Post).to receive(:invoke_after_failed_group_delete)
+              .with(group, not_authorized_documents.map(&:id))
+            group.destroy
+          end
 
-          not_authorized_documents.each do |document|
-            expect(Post.where(_id: document.id).exists?).to be_truthy
+          it 'successful callback is not called' do
+            expect(Post).not_to receive(:invoke_after_successful_group_delete)
+            group.destroy
+          end
+
+          it 'authorized resources are removed' do
+            group.destroy
+
+            authorized_documents.each do |document|
+              expect(Post.where(_id: document.id).exists?).to be_falsey
+            end
+          end
+
+          it 'not authorized resources are_not removed' do
+            group.destroy
+
+            not_authorized_documents.each do |document|
+              expect(Post.where(_id: document.id).exists?).to be_truthy
+            end
+          end
+        end
+      end
+
+      context 'when a different method is used' do
+        before do
+          ActAsGroup.configure do
+            authorize? { true }
+            destroy_resource :custom_destroy
+          end
+        end
+
+        context 'when resources are checked', :run_delayed_jobs do
+          it 'all resources are sent to successful callback' do
+            expect(Post).to receive(:invoke_after_successful_group_delete)
+              .with(group)
+            group.destroy
+          end
+
+          it 'failed callback is not called' do
+            expect(Post).not_to receive(:invoke_after_failed_group_delete)
+            group.destroy
+          end
+
+          it 'authorized resources are removed' do
+            expect_any_instance_of(ActAsGroup::Group).to receive(:documents).and_return(documents)
+            documents.each do |d|
+              expect(d).to receive(:custom_destroy).and_call_original
+            end
+            group.destroy
+
+            authorized_documents.each do |document|
+              expect(Post.where(_id: document.id).exists?).to be_falsey
+            end
+          end
+
+          it 'not authorized resources are_not removed' do
+            group.destroy
+
+            not_authorized_documents.each do |document|
+              expect(Post.where(_id: document.id).exists?).to be_truthy
+            end
           end
         end
       end
     end
 
-    context 'when a different method is used' do
-      before do
-        ActAsGroup.configure do
-          authorize? { true }
-          destroy_resource :custom_destroy
-        end
+    describe '#update' do
+      subject(:update_group) do
+        group.update(update_params)
       end
 
-      it 'not authorized resources are sent to failed callback', :run_delayed_jobs do
-        expect(Post).not_to receive(:invoke_after_failed_group_delete)
-        group.destroy
-      end
+      let(:update_params) { {draft: true} }
 
-      context 'when resources are checked' do
-        it 'authorized resources are removed', :run_delayed_jobs do
-          expect_any_instance_of(ActAsGroup::Group).to receive(:documents).and_return(documents)
-          documents.each do |d|
-            expect(d).to receive(:custom_destroy).and_call_original
-          end
-          group.destroy
-
-          authorized_documents.each do |document|
-            expect(Post.where(_id: document.id).exists?).to be_falsey
+      context 'when default method is used' do
+        before do
+          ActAsGroup.configure do
+            authorize? { |document, _method| document.authorized }
           end
         end
 
-        it 'not authorized resources are_not removed', :run_delayed_jobs do
-          group.destroy
+        context 'when resources are checked', :run_delayed_jobs do
+          it 'not authorized resources are sent to failed callback' do
+            expect(Post).to receive(:invoke_after_failed_group_update)
+              .with(group, not_authorized_documents.map(&:id), update_params)
+            update_group
+          end
 
-          not_authorized_documents.each do |document|
-            expect(Post.where(_id: document.id).exists?).to be_truthy
+          it 'successful callback is not called' do
+            expect(Post).not_to receive(:invoke_after_successful_group_update)
+            update_group
+          end
+
+          it 'authorized resources are removed' do
+            update_group
+
+            authorized_documents.each do |document|
+              expect(Post.find(document.id).draft).to eq true
+            end
+          end
+
+          it 'not authorized resources are_not updated' do
+            update_group
+
+            not_authorized_documents.each do |document|
+              expect(Post.find(document.id).draft).not_to eq true
+            end
+          end
+        end
+      end
+
+      context 'when a different method is used' do
+        before do
+          ActAsGroup.configure do
+            authorize? { true }
+          end
+        end
+
+        context 'when resources are checked', :run_delayed_jobs do
+          it 'all resources are sent to successful callback' do
+            expect(Post).to receive(:invoke_after_successful_group_update)
+              .with(group, update_params)
+              update_group
+          end
+
+          it 'failed callback is not called' do
+            expect(Post).not_to receive(:invoke_after_failed_group_update)
+            update_group
+          end
+
+          it 'authorized resources are updated' do
+            expect_any_instance_of(ActAsGroup::Group).to receive(:documents).and_return(documents)
+            documents.each do |d|
+              expect(d).to receive(:update).and_call_original
+            end
+            update_group
+
+            authorized_documents.each do |document|
+              expect(Post.find(document.id).draft).to eq true
+            end
           end
         end
       end
     end
   end
 
-  describe '#update' do
+  describe 'model_name' do
+    let(:documents) do
+      Array.new(4, Post.create(title: 'authorized', authorized: true))
+    end
+    let(:document_type) { documents.first.class.to_s }
+    let(:document_ids) { documents.map(&:id).map(&:to_s) }
+
+    context 'when default', :run_delayed_jobs do
+      before do
+        ActAsGroup.configure do
+          authorize? { |document, _method, user| document.authorized && user.present? }
+        end
+      end
+
+      let(:user) { User.create }
+      let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: user.id) }
+
+      it 'update' do
+        expect { group.update(draft: true) }.not_to raise_error
+      end
+
+      it 'destroy' do
+        expect { group.destroy }.not_to raise_error
+      end
+    end
+
+    context 'when admin', :run_delayed_jobs do
+      before do
+        admin_class = Class.new do
+          include Mongoid::Document
+          store_in collection: 'admins'
+        end
+
+        stub_const('Admin', admin_class)
+
+        ActAsGroup.configure do
+          authorize? { |document, _method, user| document.authorized && user.is_a?(Admin) }
+          model_name 'Admin'
+        end
+      end
+
+      let(:admin) { Admin.create }
+      let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: admin.id) }
+
+      it 'update' do
+        expect { group.update(draft: true) }.not_to raise_error
+      end
+
+      it 'destroy' do
+        expect { group.destroy }.not_to raise_error
+      end
+    end
   end
 end
