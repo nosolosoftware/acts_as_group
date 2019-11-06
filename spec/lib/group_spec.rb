@@ -79,7 +79,9 @@ RSpec.describe ActAsGroup::Group do
     let(:document_ids) { documents.map(&:id).map(&:to_s) }
     let(:owner_id) { 'owner_id' }
 
-    let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: owner_id) }
+    let(:group) do
+      ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: owner_id)
+    end
 
     describe '#destroy' do
       context 'when default method is used' do
@@ -217,7 +219,7 @@ RSpec.describe ActAsGroup::Group do
           it 'all resources are sent to successful callback' do
             expect(Post).to receive(:invoke_after_successful_group_update)
               .with(group, update_params)
-              update_group
+            update_group
           end
 
           it 'failed callback is not called' do
@@ -256,7 +258,9 @@ RSpec.describe ActAsGroup::Group do
       end
 
       let(:user) { User.create }
-      let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: user.id) }
+      let(:group) do
+        ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: user.id)
+      end
 
       it 'update' do
         expect { group.update(draft: true) }.not_to raise_error
@@ -283,7 +287,9 @@ RSpec.describe ActAsGroup::Group do
       end
 
       let(:admin) { Admin.create }
-      let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: admin.id) }
+      let(:group) do
+        ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: admin.id)
+      end
 
       it 'update' do
         expect { group.update(draft: true) }.not_to raise_error

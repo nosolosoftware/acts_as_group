@@ -39,7 +39,9 @@ RSpec.describe ActAsGroup::Callbacks, :run_delayed_jobs, mock_find_user: true do
   let(:document_ids) { documents.map(&:id).map(&:to_s) }
   let(:owner_id) { 'owner_id' }
   let(:update_params) { {signature: 'Group signature'} }
-  let(:group) { ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: owner_id) }
+  let(:group) do
+    ActAsGroup::Group.create(type: document_type, ids: document_ids, owner_id: owner_id)
+  end
 
   describe 'successful callbacks' do
     before do
