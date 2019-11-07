@@ -4,6 +4,7 @@ class Post
 
   field :title
   field :authorized, type: Boolean
+  field :draft, type: Boolean, default: false
 
   def custom_destroy
     destroy if authorized

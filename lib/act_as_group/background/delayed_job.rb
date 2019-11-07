@@ -5,7 +5,7 @@ module ActAsGroup
 
       included do
         def update(*args)
-          update_sync(args)
+          update_sync(*args)
         end
 
         def destroy
