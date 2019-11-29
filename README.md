@@ -123,3 +123,30 @@ class Post < ApplicationRecord
 end
 ```
 
+## Custom action methods per resource
+
+To use a custom method in one resource for update or destroy actions, first the model has to include `ActAsGroup::Resource`
+
+Then you can define the custom methods with `group_update` and `group_destroy` followed by a symbol with the method name of your model. It is possible to define only one or both.
+
+Note that update method receives the attributes as argument, and destroy method does not have arguments.
+
+These definitions have priority over methods defined with `update_resource` abd `destroy_resource` inside ActAsGroup configuration.
+
+```ruby
+class Post < ApplicationRecord
+  include ActAsGroup::Resource
+
+  group_update :custom_update
+  group_destroy :soft_destroy
+
+  def custom_update(attributes)
+    assign_attributes(attributes)
+    save validate: false
+  end
+
+  def soft_destroy
+    update(destroyed_at: Time.zone.now)
+  end
+end
+```
