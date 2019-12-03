@@ -131,7 +131,7 @@ Then you can define the custom methods with `group_update` and `group_destroy` f
 
 Note that update method receives the attributes as argument, and destroy method does not have arguments.
 
-These definitions have priority over methods defined with `update_resource` abd `destroy_resource` inside ActAsGroup configuration.
+These definitions have priority over methods defined with `update_resource` and `destroy_resource` inside ActAsGroup configuration.
 
 ```ruby
 class Post < ApplicationRecord
