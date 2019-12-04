@@ -15,14 +15,10 @@ ActAsGroup.configure do
 
   # Updates the resource in the database. By default it makes use of `update` on the document, if
   # you want to personalize which method should be used, it could be make by means of the following:
-  # update_resource do |document, attributes|
-  #   In this case the behavior has been changed to use set, avoiding calling callbacks
-  #   document.set(attributes)
-  # end
+  # update_resource :set
+  # In this case the behavior has been changed to use set, avoiding calling callbacks.
 
   # Removes the resource. By default it makes use of `destroy` on the document, if you want to
   # personalize the behavior, this method should be used.
-  # destroy_resource do |document|
-  #   document.delete
-  # end
+  # destroy_resource :delete
 end

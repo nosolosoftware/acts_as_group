@@ -95,12 +95,17 @@ module ActAsGroup
 
     # Updates this very resource
     def update!(document, attributes)
-      document.send(ActAsGroup.configuration.update_resource.to_sym, attributes)
+      method = klass.ancestors.include?(ActAsGroup::Resource) && klass.group_update_method ||
+               ActAsGroup.configuration.update_resource.to_sym
+
+      document.send(method, attributes)
     end
 
     # Removes this very resource
     def destroy!(document)
-      document.send(ActAsGroup.configuration.destroy_resource.to_sym)
+      method = klass.ancestors.include?(ActAsGroup::Resource) && klass.group_destroy_method ||
+               ActAsGroup.configuration.destroy_resource.to_sym
+      document.send(method)
     end
   end
 end
