@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.homepage    = 'http://rubygems.org/gems/act_as_group'
   s.license     = 'MIT'
 
-  s.add_dependency 'rails', '< 6.1'
+  s.add_dependency 'rails', '>= 5.0'
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'mongoid'
   s.add_development_dependency 'rspec-rails'
